@@ -218,7 +218,14 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&dirty){cle
 
 if(!location.hash){const v=ls('view');if(v&&P(v))history.replaceState(null,'','#'+v)}
 render();
-{const saved=ls('senda');if(saved){try{S=JSON.parse(saved);render()}catch(e){}}}
+{const saved=ls('senda');if(saved){try{S=JSON.parse(saved)}catch(e){}}
+const m=location.hash.match(/^#agregar=(.+)$/);
+if(m){let add=0;const have=new Set(S.people.map(p=>p.name.trim().toLowerCase()));
+ decodeURIComponent(m[1]).split('|').map(x=>x.trim()).filter(Boolean).forEach(n=>{if(!have.has(n.toLowerCase())){have.add(n.toLowerCase());S.people.push({id:'h'+Date.now().toString(36)+add,name:n,tipo:'',bautismo:'',ministrantes:'',proxima:'',items:{},sub:{},notes:[]});add++}});
+ try{localStorage.setItem('senda',JSON.stringify(S))}catch(e){}
+ history.replaceState(null,'',location.pathname+location.search);ls('view','');
+ setTimeout(()=>setStatus(add?'Se agregaron '+add+' hermanos':'Esos hermanos ya estaban en la lista'),0)}
+render()}
 setStatus('Guardado en este teléfono');
 document.getElementById('bk').addEventListener('click',()=>{const b=document.getElementById('bkp');b.hidden=!b.hidden});
 document.getElementById('dl').addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='senda-respaldo-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setStatus('Respaldo descargado')});
