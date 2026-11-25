@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Senda de los convenios</title>
+<meta name="theme-color" content="#1d3557">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Senda">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* VOICE: sereno, ordenado, de servicio; herramienta de trabajo del obispado
+   IDEA: una senda con hitos, como la libreta del secretario con ordenanzas marcadas
+   PICTURE: cada hermano es una tarjeta con su senda de 7 ordenanzas como nodos unidos
+   COLOUR and TYPE: blanco, azul profundo de banda, verde azulado para lo cumplido; Figtree
+   LAYOUT: banda de título modesta, tarjetas en rejilla, detalle en una columna tranquila */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0e1520);--ink:light-dark(#15202e,#e7ecf2);--mut:light-dark(#5a6878,#9aa8b8);--line:light-dark(#dde3ea,#263244);--soft:light-dark(#f3f6f9,#152030);--band:#1d3557;--ok:#1f8f82;--go:#3b7bd6;--na:light-dark(#b9c2cc,#4a5668);--bad:#b4373a}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Figtree,system-ui,sans-serif;overflow-x:clip}
+header{background:var(--band);color:#fff;padding:22px max(5vw,16px) 20px}
+header h1{margin:0;font-size:clamp(26px,5vw,36px);line-height:1.08;font-weight:700;text-wrap:balance}
+header p{margin:4px 0 0;color:#c9d6e8;font-size:15px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px max(5vw,16px);border-bottom:1px solid var(--line);font-size:14px;color:var(--mut)}
+#status{font-weight:600}
+main{max-width:980px;margin:0 auto;padding:20px max(4vw,14px) 40px}
+button,select,input,textarea{font:inherit;font-size:16px;color:inherit}
+button{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-weight:600}
+button.pri{background:var(--band);color:#fff;border-color:var(--band)}
+button.ghost{border-color:transparent;background:transparent;color:var(--go)}
+button.danger{color:var(--bad)}
+:focus-visible{outline:3px solid var(--go);outline-offset:2px}
+input,select,textarea{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg);width:100%}
+textarea{min-height:96px;resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:14px}
+.card{display:block;text-align:left;width:100%;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg);min-height:0;font-weight:400}
+.card:hover{border-color:var(--go)}
+.card h2{margin:0;font-size:20px;line-height:1.2}
+.card .meta{color:var(--mut);font-size:14px;margin-top:2px}
+.path{display:flex;align-items:center;margin:16px 0 6px}
+.path i{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--na);background:var(--bg)}
+.path b{flex:1;height:2px;background:var(--na)}
+.path i.d{background:var(--ok);border-color:var(--ok)}.path i.c{border-color:var(--go);box-shadow:inset 0 0 0 3px var(--bg);background:var(--go)}.path i.n{border-style:dashed}
+.path b.d{background:var(--ok)}
+.next{font-size:14px;margin-top:8px}
+.meter{height:8px;border-radius:8px;background:var(--soft);overflow:hidden;margin-top:12px}
+.meter span{display:block;height:100%;background:var(--ok)}
+.pct{font-size:13px;color:var(--mut);margin-top:4px;display:flex;justify-content:space-between}
+.add{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}.add input{flex:1 1 220px}
+.back{margin:0 0 8px -12px}
+.dh{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+.dh h2{margin:0;font-size:clamp(26px,5vw,34px);line-height:1.1}
+.chip{font-size:13px;padding:2px 10px;border-radius:20px;background:var(--soft);color:var(--mut)}
+section{margin-top:26px}
+section h3{font-size:19px;margin:0 0 4px}
+section>p.h{margin:0 0 12px;color:var(--mut);font-size:14px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.form label{font-size:14px;color:var(--mut);display:grid;gap:4px}
+ul.list{list-style:none;margin:0;padding:0}
+ul.ord{position:relative}
+ul.ord:before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:2px;background:var(--line)}
+.row{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--line)}
+ul.ord .row{border-bottom:0}
+.row .box{display:grid;place-items:center;width:44px;height:44px}
+.row .box input{width:24px;height:24px;min-height:0;accent-color:var(--ok);margin:0;position:relative;z-index:1}
+ul.ord .row .box:before{content:"";position:absolute;width:30px;height:30px;border-radius:50%;background:var(--bg);border:2px solid var(--na)}
+ul.ord .row.s-d .box:before{border-color:var(--ok)}ul.ord .row.s-c .box:before{border-color:var(--go)}
+.row .t{align-self:center;font-weight:500}
+.row.s-d .t{color:var(--ok)}.row.s-n .t{color:var(--mut);text-decoration:line-through}
+.ctl{grid-column:2;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl select{width:auto;min-width:140px;font-size:15px}
+.ctl input[type=date]{width:auto;font-size:15px}
+.ctl a{font-size:14px;color:var(--go);padding:10px 4px;white-space:nowrap}
+.subs{grid-column:2;list-style:none;margin:4px 0 0;padding:0}
+.subs label{display:flex;gap:10px;align-items:center;min-height:40px;font-size:15px}
+.subs input{width:20px;height:20px;min-height:0;accent-color:var(--ok);flex:none}
+.note{padding:12px 0;border-bottom:1px solid var(--line)}
+.note .d{font-size:13px;color:var(--mut);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.note p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.newnote{display:grid;gap:10px;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.newnote textarea{grid-column:1/-1}
+.confirm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:15px}
+.empty{color:var(--mut);font-size:15px;padding:8px 0}
+footer{max-width:980px;margin:0 auto;padding:0 max(4vw,14px) 40px;color:var(--mut);font-size:13px}
+footer a{color:var(--go)}
+.bk{padding:14px max(5vw,16px);background:var(--soft);font-size:15px}.bk p{margin:0}.up{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);font-weight:600;cursor:pointer}.up input{display:none}
+.ro input,.ro select,.ro textarea,.ro button.w{pointer-events:none;opacity:.6}
+@media(max-width:600px){.newnote{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:no-preference){.meter span{transition:width .4s ease}}
+</style>
+</head>
+<body>
+<header>
+<h1>Senda de los convenios</h1>
+<p>Seguimiento del obispado · checklist y notas por hermano</p>
+</header>
+<div class="bar"><span id="status">Listo</span><span><button class="ghost" id="copy" type="button">Copiar resumen</button><button class="ghost" id="bk" type="button">Respaldo</button></span></div>
+<div class="bk" id="bkp" hidden><p>Los datos viven solo en este teléfono. Descargue un respaldo de vez en cuando; con él puede pasarlos a otro dispositivo.</p><div class="add"><button id="dl" type="button">Descargar respaldo</button><label class="up">Restaurar respaldo<input type="file" id="ul" accept=".json,application/json"></label></div></div>
+<main id="app"></main>
+<footer>Los datos se guardan solo en este dispositivo; no se envían a ningún servidor. Basado en el manual <a href="https://www.churchofjesuschrist.org/study/manual/my-covenant-path?lang=spa" target="_blank" rel="noopener">Mi senda de los convenios</a>. Herramienta interna de seguimiento; los registros oficiales de ordenanzas siguen en las herramientas de la Iglesia.</footer>
+<script type="application/json" id="state">{"people":[]}</script>
+<script>
+{
+const M = 'https://www.churchofjesuschrist.org/study/manual/my-covenant-path/';
+const ORD = [
+  {k:'bautismo',t:'Bautismo y confirmación'},
+  {k:'aaronico',t:'Ordenación al Sacerdocio Aarónico',u:'learn-about-the-aaronic-priesthood'},
+  {k:'recomendacion',t:'Recomendación de uso limitado (bautismos por los muertos)',u:'receive-a-limited-use-temple-recommend'},
+  {k:'patriarcal',t:'Bendición patriarcal',u:'receive-a-patriarchal-blessing'},
+  {k:'melquisedec',t:'Ordenación al Sacerdocio de Melquisedec',u:'learn-about-the-melchizedek-priesthood'},
+  {k:'investidura',t:'Investidura',u:'receive-your-endowment',sub:[['inv1','Estudiar los recursos sobre la investidura y el templo'],['inv2','Asistir a la clase de preparación para el templo'],['inv3','Entrevista con el obispo para la recomendación'],['inv4','Fijar la fecha con el templo']]},
+  {k:'sellamiento',t:'Sellamiento con su familia',u:'be-sealed-to-your-family'}
+];
+const EXP = [['amistad','Entablar amistad con miembros del barrio','make-friends-with-members-of-your-ward'],['estudio','Mejorar el estudio del Evangelio','improve-gospel-study'],['hj','Aprender acerca del Sacerdocio Aarónico y los Hombres Jóvenes','learn-about-the-aaronic-priesthood'],['mj','Aprender acerca de las Mujeres Jóvenes','learn-about-young-women'],['ss','Aprender acerca de la Sociedad de Socorro','learn-about-relief-society'],['primaria','Aprender acerca de la Primaria','learn-about-primary'],['antepasados','Ayudar a sus antepasados a recibir las ordenanzas','help-ancestors-receive-sacred-ordinances'],['desanimo','Superar el desánimo y los contratiempos','overcome-discouragement-and-setbacks'],['reposo','Santificar el día de reposo','keep-the-sabbath-day-holy'],['servicio','Prestar servicio a otras personas','serve-others'],['compartir','Compartir el Evangelio','share-light'],['noche','Participar en una noche de hogar','participate-in-a-home-evening'],['profeta','Seguir al profeta','follow-the-prophet'],['mandamientos','Obedecer los mandamientos','obey-the-commandments'],['autosuf','Ser autosuficiente','be-self-reliant'],['mlq','Aprender acerca del Sacerdocio de Melquisedec','learn-about-the-melchizedek-priesthood']].map(([k,t,u])=>({k,t,u}));
+const ALL = ORD.concat(EXP);
+const TIPOS = ['Converso nuevo','Regresa a la actividad','Miembro de varios años'];
+const STL = {'':'Pendiente',c:'En curso',d:'Completado',n:'No aplica'};
+const app = document.getElementById('app'), statusEl = document.getElementById('status');
+let S = JSON.parse(document.getElementById('state').textContent);
+const ls = (k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+let art = null, readOnly = false, dirty = false, timer = null, pendingDel = null;
+const esc = s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = ()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const fmt = f=>{if(!f)return '';const [y,m,d]=f.split('-');return d+'/'+m+'/'+y};
+const P = id=>S.people.find(p=>p.id===id);
+const st = (p,k)=>(p.items[k]&&p.items[k].s)||'';
+function prog(p){let tot=0,done=0;for(const it of ALL){const s=st(p,it.k);if(s==='n')continue;tot++;if(s==='d')done++}return {done,tot,pct:tot?Math.round(done/tot*100):0}}
+function nextOrd(p){const o=ORD.find(o=>!['d','n'].includes(st(p,o.k)));return o?o.t:null}
+function setStatus(t){statusEl.textContent=t}
+
+function overview(){
+  app.innerHTML = `${S.people.length?'':'<p class="empty">Agregue abajo a los hermanos a los que darán seguimiento.</p>'}<div class="grid">${S.people.map(card).join('')}</div>
+  <form class="add" id="addf"><input id="addn" placeholder="Nombre del hermano" aria-label="Nombre del hermano" class="w"><button class="w" type="submit">Agregar hermano</button></form>`;
+}
+function card(p){
+  const g=prog(p), n=nextOrd(p), last=p.notes.length?p.notes.slice().sort((a,b)=>b.f.localeCompare(a.f))[0].f:'';
+  const path=ORD.map((o,i)=>(i?`<b class="${st(p,ORD[i-1].k)==='d'&&st(p,o.k)==='d'?'d':''}"></b>`:'')+`<i class="${st(p,o.k)}" title="${esc(o.t)}: ${STL[st(p,o.k)]}"></i>`).join('');
+  return `<button class="card" data-open="${esc(p.id)}" type="button"><h2>${esc(p.name)}</h2>
+  <div class="meta">${esc(p.tipo||'Sin categoría')}${p.ministrantes?' · Ministrantes: '+esc(p.ministrantes):''}</div>
+  <div class="path" aria-label="Ordenanzas">${path}</div>
+  <div class="next">${n?'Siguiente ordenanza: <strong>'+esc(n)+'</strong>':'<strong>Ordenanzas al día</strong>'}</div>
+  <div class="meter"><span style="width:${g.pct}%"></span></div>
+  <div class="pct"><span>${g.done} de ${g.tot} pasos · ${g.pct}%</span><span>${p.notes.length?'Última nota '+fmt(last):'Sin notas'}</span></div></button>`;
+}
+function row(p,it){
+  const s=st(p,it.k), f=(p.items[it.k]&&p.items[it.k].f)||'';
+  const subs=it.sub?`<ul class="subs">${it.sub.map(([sk,st2])=>`<li><label><input type="checkbox" class="w" data-act="sub" data-k="${sk}" ${p.sub[sk]?'checked':''}>${st2}</label></li>`).join('')}</ul>`:'';
+  return `<li class="row s-${s||'p'}"><span class="box"><input type="checkbox" class="w" data-act="done" data-k="${it.k}" aria-label="${esc(it.t)}" ${s==='d'?'checked':''}></span><span class="t">${it.t}</span>
+  <div class="ctl"><select class="w" data-act="state" data-k="${it.k}" aria-label="Estado de ${esc(it.t)}">${Object.entries(STL).map(([v,l])=>`<option value="${v}" ${v===s?'selected':''}>${l}</option>`).join('')}</select>${s==='d'?`<input type="date" class="w" data-act="fecha" data-k="${it.k}" value="${esc(f)}" aria-label="Fecha">`:''}${it.u?`<a href="${M+it.u}?lang=spa" target="_blank" rel="noopener">Ver en el manual ↗</a>`:''}</div>${subs}</li>`;
+}
+function detail(p){
+  const g=prog(p);
+  const notes=p.notes.slice().sort((a,b)=>b.f.localeCompare(a.f)||b.id.localeCompare(a.id));
+  app.innerHTML = `<button class="ghost back" data-open="" type="button">← Todos los hermanos</button>
+  <div class="dh"><h2>${esc(p.name)}</h2><span class="chip">${esc(p.tipo||'Sin categoría')}</span></div>
+  <div class="meter"><span style="width:${g.pct}%"></span></div><div class="pct"><span>${g.done} de ${g.tot} pasos completados · ${g.pct}%</span></div>
+  <section><h3>Datos</h3><div class="form">
+   <label>Nombre<input class="w" data-f="name" value="${esc(p.name)}"></label>
+   <label>Situación<select class="w" data-f="tipo"><option value="">Sin categoría</option>${TIPOS.map(t=>`<option ${t===p.tipo?'selected':''}>${t}</option>`).join('')}</select></label>
+   <label>Fecha de bautismo<input type="date" class="w" data-f="bautismo" value="${esc(p.bautismo)}"></label>
+   <label>Ministrantes / misioneros<input class="w" data-f="ministrantes" value="${esc(p.ministrantes)}"></label>
+   <label style="grid-column:1/-1">Próxima acción acordada<input class="w" data-f="proxima" value="${esc(p.proxima)}" placeholder="Ej.: visita del obispo el domingo"></label>
+  </div></section>
+  <section><h3>Ordenanzas</h3><p class="h">Marque la casilla al completarse; use el estado para “En curso” o “No aplica”.</p><ul class="list ord">${ORD.map(o=>row(p,o)).join('')}</ul></section>
+  <section><h3>Experiencias de Mi senda de los convenios</h3><ul class="list">${EXP.map(o=>row(p,o)).join('')}</ul></section>
+  <section><h3>Notas</h3><form class="newnote" id="nf"><textarea class="w" id="nt" placeholder="Visita, entrevista, compromiso, necesidad…" aria-label="Nueva nota">${esc(ls('draft-'+p.id)||'')}</textarea><input type="date" class="w" id="nd" value="${today()}" aria-label="Fecha de la nota"><button class="pri w" type="submit">Agregar nota</button></form>
+  ${notes.length?notes.map(n=>`<div class="note"><div class="d"><span>${fmt(n.f)}</span>${pendingDel===n.id?`<span class="confirm">¿Eliminar? <button class="danger w" data-delnote="${esc(n.id)}" type="button">Sí</button><button data-cancel type="button">No</button></span>`:`<button class="ghost w" data-asknote="${esc(n.id)}" type="button">Eliminar</button>`}</div><p>${esc(n.t)}</p></div>`).join(''):'<p class="empty">Todavía no hay notas.</p>'}</section>
+  <section>${pendingDel==='person'?`<div class="confirm">¿Quitar a ${esc(p.name)} de la lista con todas sus notas? <button class="danger w" data-delperson type="button">Sí, quitar</button><button data-cancel type="button">No</button></div>`:`<button class="danger w" data-askperson type="button">Quitar de la lista</button>`}</section>`;
+}
+function view(){const id=(location.hash||'').slice(1);return id&&P(id)?id:''}
+function render(){const id=view();app.classList.toggle('ro',readOnly);id?detail(P(id)):overview()}
+function go(id){pendingDel=null;ls('view',id);if(id)location.hash=id;else history.replaceState(null,'',location.pathname+location.search);render();window.scrollTo(0,0)}
+
+function touch(){dirty=true;clearTimeout(timer);timer=setTimeout(save,300)}
+function save(){
+  if(!dirty)return;dirty=false;
+  try{localStorage.setItem('senda',JSON.stringify(S));setStatus('Guardado en este teléfono')}catch(e){setStatus('No se pudo guardar en este teléfono')}
+}
+function setItem(p,k,s){if(!s){delete p.items[k];return}p.items[k]={s,f:s==='d'?((p.items[k]&&p.items[k].f)||today()):''}}
+
+app.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;const p=P(view());
+  if(t.dataset.open!==undefined){go(t.dataset.open);return}
+  if(t.hasAttribute('data-cancel')){pendingDel=null;render();return}
+  if(t.dataset.asknote){pendingDel=t.dataset.asknote;render();return}
+  if(t.hasAttribute('data-askperson')){pendingDel='person';render();return}
+  if(t.dataset.delnote&&p){p.notes=p.notes.filter(n=>n.id!==t.dataset.delnote);pendingDel=null;touch();render();return}
+  if(t.hasAttribute('data-delperson')&&p){S.people=S.people.filter(x=>x!==p);touch();go('')}
+});
+app.addEventListener('change',e=>{
+  const el=e.target,p=P(view());if(!p)return;const k=el.dataset.k;
+  if(el.dataset.f){p[el.dataset.f]=el.value.trim();if(el.dataset.f==='name'&&!p.name)p.name='Sin nombre';touch();if(el.tagName==='SELECT')render();return}
+  if(el.dataset.act==='done'){setItem(p,k,el.checked?'d':'')}
+  else if(el.dataset.act==='state'){setItem(p,k,el.value)}
+  else if(el.dataset.act==='fecha'){if(p.items[k])p.items[k].f=el.value}
+  else if(el.dataset.act==='sub'){if(el.checked)p.sub[k]=true;else delete p.sub[k];if(Object.keys(p.sub).some(x=>x.startsWith('inv'))&&!st(p,'investidura'))setItem(p,'investidura','c')}
+  else return;
+  touch();if(el.dataset.act!=='fecha'){const y=window.scrollY;render();window.scrollTo(0,y)}
+});
+app.addEventListener('input',e=>{if(e.target.id==='nt')ls('draft-'+view(),e.target.value)});
+app.addEventListener('submit',e=>{
+  e.preventDefault();if(readOnly)return;
+  if(e.target.id==='addf'){const n=document.getElementById('addn').value.trim();if(!n)return;S.people.push({id:'h'+Date.now().toString(36),name:n,tipo:'',bautismo:'',ministrantes:'',proxima:'',items:{},sub:{},notes:[]});touch();render();return}
+  if(e.target.id==='nf'){const p=P(view()),t=document.getElementById('nt').value.trim();if(!p||!t)return;p.notes.push({id:Date.now().toString(36),f:document.getElementById('nd').value||today(),t});ls('draft-'+p.id,'');document.activeElement.blur();touch();render()}
+});
+document.getElementById('copy').addEventListener('click',async()=>{
+  const txt=S.people.map(p=>{const g=prog(p),n=nextOrd(p),last=p.notes.slice().sort((a,b)=>b.f.localeCompare(a.f))[0];
+    return `${p.name} (${p.tipo||'sin categoría'}) — ${g.pct}% · ${n?'Siguiente: '+n:'Ordenanzas al día'}${p.proxima?'\n  Próxima acción: '+p.proxima:''}${last?'\n  Última nota ('+fmt(last.f)+'): '+last.t:''}`}).join('\n\n');
+  try{await navigator.clipboard.writeText('Senda de los convenios — '+fmt(today())+'\n\n'+txt);setStatus('Resumen copiado')}catch(e){setStatus('No se pudo copiar')}
+});
+window.addEventListener('hashchange',()=>{pendingDel=null;render()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&dirty){clearTimeout(timer);const a=document.activeElement;if(a&&a.blur)a.blur();save()}});
+
+if(!location.hash){const v=ls('view');if(v&&P(v))history.replaceState(null,'','#'+v)}
+render();
+{const saved=ls('senda');if(saved){try{S=JSON.parse(saved);render()}catch(e){}}}
+setStatus('Guardado en este teléfono');
+document.getElementById('bk').addEventListener('click',()=>{const b=document.getElementById('bkp');b.hidden=!b.hidden});
+document.getElementById('dl').addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='senda-respaldo-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setStatus('Respaldo descargado')});
+document.getElementById('ul').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.people))throw 0;S=d;dirty=true;save();go('');setStatus('Respaldo restaurado')}catch(err){setStatus('Ese archivo no es un respaldo válido')}e.target.value=''});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
