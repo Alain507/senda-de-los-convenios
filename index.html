@@ -89,6 +89,7 @@ ul.ord .row.s-d .box:before{border-color:var(--ok)}ul.ord .row.s-c .box:before{b
 footer{max-width:980px;margin:0 auto;padding:0 max(4vw,14px) 40px;color:var(--mut);font-size:13px}
 footer a{color:var(--go)}
 .bk{padding:14px max(5vw,16px);background:var(--soft);font-size:15px}.bk p{margin:0}.up{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);font-weight:600;cursor:pointer}.up input{display:none}
+.gate{max-width:440px;margin:8vh auto;text-align:center}.gate h2{font-size:28px;margin:0 0 8px}.gate p{color:var(--mut)}.gate button{margin-top:12px;width:100%}
 .ro input,.ro select,.ro textarea,.ro button.w{pointer-events:none;opacity:.6}
 @media(max-width:600px){.newnote{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:no-preference){.meter span{transition:width .4s ease}}
@@ -99,10 +100,14 @@ footer a{color:var(--go)}
 <h1>Senda de los convenios</h1>
 <p>Barrio Bajo Boquete · Seguimiento del obispado</p>
 </header>
-<div class="bar"><span id="status">Listo</span><span><button class="ghost" id="copy" type="button">Copiar resumen</button><button class="ghost" id="bk" type="button">Respaldo</button></span></div>
-<div class="bk" id="bkp" hidden><p>Los datos viven solo en este teléfono. Descargue un respaldo de vez en cuando; con él puede pasarlos a otro dispositivo.</p><div class="add"><button id="dl" type="button">Descargar respaldo</button><label class="up">Restaurar respaldo<input type="file" id="ul" accept=".json,application/json"></label></div></div>
+<div class="bar"><span id="status">Listo</span><span><button class="ghost" id="copy" type="button">Copiar resumen</button><button class="ghost" id="bk" type="button">Respaldo</button><button class="ghost" id="out" type="button" hidden>Salir</button></span></div>
+<div class="bk" id="bkp" hidden><p>Descargue un respaldo de vez en cuando; con él puede restaurar la lista si algo sale mal.</p><div class="add"><button id="dl" type="button">Descargar respaldo</button><label class="up">Restaurar respaldo<input type="file" id="ul" accept=".json,application/json"></label></div></div>
 <main id="app"></main>
 <footer>Los datos se guardan solo en este dispositivo; no se envían a ningún servidor. Basado en el manual <a href="https://www.churchofjesuschrist.org/study/manual/my-covenant-path?lang=spa" target="_blank" rel="noopener">Mi senda de los convenios</a>. Herramienta interna de seguimiento; los registros oficiales de ordenanzas siguen en las herramientas de la Iglesia.</footer>
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script type="application/json" id="state">{"people":[]}</script>
 <script>
 {
@@ -123,6 +128,8 @@ const STL = {'':'Pendiente',c:'En curso',d:'Completado',n:'No aplica'};
 const app = document.getElementById('app'), statusEl = document.getElementById('status');
 let S = JSON.parse(document.getElementById('state').textContent);
 const ls = (k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+const CFG=window.FIREBASE_CONFIG,CLOUD=!!(CFG&&window.firebase);
+let gate=CLOUD?'wait':'', gmsg='', auth=null, docRef=null, user=null, lastSent='', pendingRemote=false, unsub=null;
 let art = null, readOnly = false, dirty = false, timer = null, pendingDel = null;
 const esc = s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today = ()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
@@ -173,18 +180,58 @@ function detail(p){
   <section>${pendingDel==='person'?`<div class="confirm">¿Quitar a ${esc(p.name)} de la lista con todas sus notas? <button class="danger w" data-delperson type="button">Sí, quitar</button><button data-cancel type="button">No</button></div>`:`<button class="danger w" data-askperson type="button">Quitar de la lista</button>`}</section>`;
 }
 function view(){const id=(location.hash||'').slice(1);return id&&P(id)?id:''}
-function render(){const id=view();app.classList.toggle('ro',readOnly);id?detail(P(id)):overview()}
+function render(){if(gate){gateView();return}const id=view();app.classList.toggle('ro',readOnly);id?detail(P(id)):overview()}
 function go(id){pendingDel=null;ls('view',id);if(id)location.hash=id;else history.replaceState(null,'',location.pathname+location.search);render();window.scrollTo(0,0)}
 
-function touch(){dirty=true;clearTimeout(timer);timer=setTimeout(save,300)}
+function touch(){dirty=true;clearTimeout(timer);timer=setTimeout(save,CLOUD?700:300)}
 function save(){
   if(!dirty)return;dirty=false;
-  try{localStorage.setItem('senda',JSON.stringify(S));setStatus('Guardado en este teléfono')}catch(e){setStatus('No se pudo guardar en este teléfono')}
+  try{localStorage.setItem('senda',JSON.stringify(S))}catch(e){}
+  if(CLOUD&&user)pushCloud();else setStatus('Guardado en este teléfono');
+}
+function pushCloud(){
+  lastSent=JSON.stringify(S);setStatus('Sincronizando…');
+  docRef.set({data:lastSent,at:firebase.firestore.FieldValue.serverTimestamp(),by:user.email})
+   .then(()=>setStatus('Sincronizado'))
+   .catch(e=>setStatus(e&&e.code==='permission-denied'?'Esta cuenta no tiene permiso para guardar':'Sin conexión: se enviará al volver'));
+  if(!navigator.onLine)setStatus('Sin conexión: se enviará al volver');
+}
+function gateView(){
+  app.innerHTML=gate==='wait'?'<div class="gate"><p>Conectando…</p></div>':`<div class="gate"><h2>Entrar</h2><p>La lista del obispado se guarda en línea y se sincroniza entre dispositivos. Entre con una cuenta de Google autorizada.</p><button class="pri" id="gin" type="button">Entrar con Google</button>${gmsg?'<p>'+esc(gmsg)+'</p>':''}${gate==='denied'?'<button id="gout" type="button">Usar otra cuenta</button>':''}</div>`;
+}
+function login(){
+  const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:'select_account'});
+  auth.signInWithPopup(pr).catch(e=>{const c=e&&e.code||'';
+    if(/popup-blocked|operation-not-supported|cancelled-popup|web-storage/.test(c))auth.signInWithRedirect(pr);
+    else if(!/popup-closed/.test(c)){gmsg='No se pudo entrar ('+c+').';render()}});
+}
+function logout(){if(unsub){unsub();unsub=null}try{localStorage.removeItem('senda')}catch(e){}S={people:[]};gmsg='';auth.signOut()}
+function subscribe(){
+  if(unsub)unsub();
+  unsub=docRef.onSnapshot(snap=>{
+    if(snap.metadata.hasPendingWrites)return;
+    if(gate){gate='';render()}
+    if(!snap.exists){if(S.people.length)pushCloud();else setStatus('Sincronizado');return}
+    const d=snap.data(),txt=d.data||'';
+    if(txt===lastSent){setStatus('Sincronizado');return}
+    try{S=JSON.parse(txt);lastSent=txt}catch(e){return}
+    try{localStorage.setItem('senda',txt)}catch(e){}
+    setStatus(snap.metadata.fromCache?'Sin conexión: mostrando lo último guardado':'Sincronizado'+(d.by&&user&&d.by!==user.email?' · último cambio: '+d.by:''));
+    const a=document.activeElement;
+    if(a&&app.contains(a)&&a.matches('input:not([type=checkbox]),textarea'))pendingRemote=true;
+    else{const y=window.scrollY;render();window.scrollTo(0,y)}
+  },err=>{
+    if(err&&err.code==='permission-denied'){gate='denied';gmsg='La cuenta '+(user&&user.email||'')+' no está autorizada para ver esta lista.';try{localStorage.removeItem('senda')}catch(e){}S={people:[]};render()}
+    else setStatus('Error de sincronización: '+(err&&err.code||''));
+  });
 }
 function setItem(p,k,s){if(!s){delete p.items[k];return}p.items[k]={s,f:s==='d'?((p.items[k]&&p.items[k].f)||today()):''}}
 
+app.addEventListener('focusout',()=>{if(pendingRemote)setTimeout(()=>{const a=document.activeElement;if(pendingRemote&&!(a&&app.contains(a)&&a.matches('input:not([type=checkbox]),textarea'))){pendingRemote=false;const y=window.scrollY;render();window.scrollTo(0,y)}},50)});
 app.addEventListener('click',e=>{
-  const t=e.target.closest('button');if(!t)return;const p=P(view());
+  const t=e.target.closest('button');if(!t)return;
+  if(t.id==='gin'){login();return}
+  if(t.id==='gout'){logout();return}const p=P(view());
   if(t.dataset.open!==undefined){go(t.dataset.open);return}
   if(t.hasAttribute('data-cancel')){pendingDel=null;render();return}
   if(t.dataset.asknote){pendingDel=t.dataset.asknote;render();return}
@@ -226,7 +273,17 @@ if(m){let add=0;const have=new Set(S.people.map(p=>p.name.trim().toLowerCase()))
  history.replaceState(null,'',location.pathname+location.search);ls('view','');
  setTimeout(()=>setStatus(add?'Se agregaron '+add+' hermanos':'Esos hermanos ya estaban en la lista'),0)}
 render()}
-setStatus('Guardado en este teléfono');
+setStatus(CLOUD?'Conectando…':'Guardado en este teléfono');
+if(CLOUD){
+  firebase.initializeApp(CFG);auth=firebase.auth();const db=firebase.firestore();
+  try{db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+  docRef=db.collection('barrios').doc(CFG.barrioDoc||'bajo-boquete');
+  auth.getRedirectResult().catch(e=>{gmsg='No se pudo entrar ('+(e&&e.code||'')+').';render()});
+  auth.onAuthStateChanged(u=>{user=u;const o=document.getElementById('out');o.hidden=!u;
+    if(!u){if(unsub){unsub();unsub=null}gate='login';setStatus('Sin sesión');render();return}
+    gate='wait';render();subscribe()});
+  document.getElementById('out').addEventListener('click',logout);
+}else if(window.FIREBASE_CONFIG){setStatus('Sin conexión: no se pudo cargar la sincronización')}
 document.getElementById('bk').addEventListener('click',()=>{const b=document.getElementById('bkp');b.hidden=!b.hidden});
 document.getElementById('dl').addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='senda-respaldo-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setStatus('Respaldo descargado')});
 document.getElementById('ul').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.people))throw 0;S=d;dirty=true;save();go('');setStatus('Respaldo restaurado')}catch(err){setStatus('Ese archivo no es un respaldo válido')}e.target.value=''});

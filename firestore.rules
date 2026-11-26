@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Solo las cuentas de Google en esta lista pueden leer o modificar la lista del obispado.
+    function autorizado() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['alain.guerra507@gmail.com'];
+    }
+    match /barrios/{barrio} {
+      allow read, write: if autorizado();
+    }
+  }
+}
