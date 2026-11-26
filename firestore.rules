@@ -5,7 +5,7 @@ service cloud.firestore {
     function autorizado() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email in ['alain.guerra507@gmail.com', 'obispo.arauz@gmail.com'];
+        && request.auth.token.email in ['alain.guerra507@gmail.com', 'obispo.arauz@gmail.com', 'dennisherreraservices@gmail.com'];
     }
     match /barrios/{barrio} {
       allow read, write: if autorizado();
