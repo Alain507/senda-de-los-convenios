@@ -205,7 +205,7 @@ function login(){
     if(/popup-blocked|operation-not-supported|cancelled-popup|web-storage/.test(c))auth.signInWithRedirect(pr);
     else if(!/popup-closed/.test(c)){gmsg='No se pudo entrar ('+c+').';render()}});
 }
-function logout(){if(unsub){unsub();unsub=null}try{localStorage.removeItem('senda')}catch(e){}S={people:[]};gmsg='';auth.signOut()}
+function logout(){if(unsub){unsub();unsub=null}try{localStorage.removeItem('senda')}catch(e){}S={people:[]};gmsg='';setStatus('Cerrando sesión…');auth.signOut().then(()=>firebase.firestore().terminate()).then(()=>firebase.firestore().clearPersistence()).catch(()=>{}).then(()=>location.reload())}
 function subscribe(){
   if(unsub)unsub();
   unsub=docRef.onSnapshot(snap=>{
